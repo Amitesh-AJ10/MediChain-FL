@@ -1,4 +1,5 @@
 # medichain-fl/backend/fl_client/client.py
+import base64
 import flwr as fl
 import torch
 import torch.nn as nn
@@ -6,11 +7,13 @@ from torch.utils.data import DataLoader, Dataset
 from torchvision import datasets
 from pathlib import Path
 import sys
+from typing import Optional
 from PIL import Image  # Required for Hugging Face processor
 
 # Add the parent directory (backend) to sys.path to import model.py
 sys.path.append(str(Path(__file__).parent.parent))
 from model import load_model, load_image_processor  # Import both functions
+from utils.encryption import HEManager
 
 
 class HuggingFaceImageFolder(Dataset):
@@ -38,6 +41,8 @@ class PneumoniaClient(fl.client.NumPyClient):
     def __init__(self, hospital_id: str, data_path: str, model_name: str = "dima806/chest_xray_pneumonia_detection", device: str = 'cpu'):
         self.hospital_id = hospital_id
         self.device = device
+        self.he_manager: Optional[HEManager] = None
+        self.he_context_id: str | None = None
         
         # Load Hugging Face model
         self.model = load_model(model_name=model_name, freeze_encoder=True).to(device)
@@ -70,9 +75,7 @@ class PneumoniaClient(fl.client.NumPyClient):
         Returns only the model parameters that are trainable (unfrozen).
         """
         print(f"[{self.hospital_id}] Getting trainable parameters.")
-        # Find all parameters that have requires_grad = True
-        trainable_params = [val.cpu().detach().numpy() for val in self.model.parameters() if val.requires_grad]
-        return trainable_params
+        return self._get_trainable_parameters()
     
     def set_parameters(self, parameters):
         """
@@ -85,6 +88,7 @@ class PneumoniaClient(fl.client.NumPyClient):
         self.model.load_state_dict(state_dict, strict=True)
     
     def fit(self, parameters, config):
+        self._ensure_he_context(config)
         # IMPORTANT: The client now receives the FULL updated model from the server
         self.set_parameters(parameters)
         self.model.train()
@@ -115,13 +119,16 @@ class PneumoniaClient(fl.client.NumPyClient):
         
         print(f"[{self.hospital_id}] Round finished - Loss: {avg_loss:.4f}, Acc: {accuracy:.2f}%")
         
-        # IMPORTANT: Return ONLY the updated (trainable) parameters
-        return self.get_parameters(config={}), len(self.trainloader.dataset), {
+        updated_params = self._get_trainable_parameters()
+        payload = self._prepare_parameter_payload(updated_params)
+        
+        return payload, len(self.trainloader.dataset), {
             "loss": float(avg_loss),
             "accuracy": float(accuracy)
         }
     
     def evaluate(self, parameters, config):
+        self._ensure_he_context(config)
         self.set_parameters(parameters)
         self.model.eval()
         
@@ -143,6 +150,29 @@ class PneumoniaClient(fl.client.NumPyClient):
         print(f"[{self.hospital_id}] Evaluation - Loss: {avg_loss:.4f}, Acc: {accuracy:.2f}%")
         
         return float(avg_loss), total, {"accuracy": float(accuracy)}
+
+    def _ensure_he_context(self, config: dict):
+        """Load the HE public context delivered by the server if needed."""
+        if self.he_manager is not None:
+            return
+        context_b64 = config.get("he_context_b64") if config else None
+        context_id = config.get("he_context_id") if config else None
+        if not context_b64:
+            print(f"[{self.hospital_id}] HE context not provided. Falling back to plaintext updates.")
+            return
+        context_bytes = base64.b64decode(context_b64.encode("ascii"))
+        self.he_manager = HEManager.from_serialized(context_bytes, has_secret=False)
+        self.he_context_id = context_id
+        print(f"[{self.hospital_id}] HE context loaded (id={self.he_context_id}). Encrypting updates.")
+
+    def _get_trainable_parameters(self):
+        return [val.cpu().detach().numpy() for val in self.model.parameters() if val.requires_grad]
+
+    def _prepare_parameter_payload(self, params):
+        if self.he_manager is None:
+            return params
+        encrypted = self.he_manager.encrypt_gradients(params, encrypt_all=True)
+        return self.he_manager.serialize_vectors(encrypted)
 
 def start_client(hospital_id: str, server_address: str = "localhost:8080"):
     # Determine device
