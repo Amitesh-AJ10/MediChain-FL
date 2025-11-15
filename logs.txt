@@ -1,0 +1,249 @@
+[+] Running 6/6
+ ✔ medichain-fl-flower_server      Built                                                                                                                        0.0s 
+ ✔ medichain-fl-hospital_2_client  Built                                                                                                                        0.0s 
+ ✔ medichain-fl-hospital_1_client  Built                                                                                                                        0.0s 
+ ✔ Container flower_server         Recreated                                                                                                                    0.1s 
+ ✔ Container hospital_2_client     Recreated                                                                                                                    0.1s 
+ ✔ Container hospital_1_client     Recreated                                                                                                                    0.1s 
+Attaching to flower_server, hospital_1_client, hospital_2_client
+hospital_1_client  | Starting Flower Client for Hospital: hospital_1
+hospital_2_client  | Starting Flower Client for Hospital: hospital_2
+hospital_1_client  | Waiting 10 seconds for server to initialize...
+
+hospital_2_client  | Waiting 10 seconds for server to initialize...
+flower_server      | WARNING :   DEPRECATED FEATURE: flwr.server.start_server() is deprecated.
+flower_server      |    Instead, use the `flower-superlink` CLI command to start a SuperLink as shown below:
+flower_server      | 
+flower_server      |            $ flower-superlink --insecure
+flower_server      | 
+flower_server      |    To view usage and all available options, run:
+flower_server      | 
+flower_server      |            $ flower-superlink --help
+flower_server      | 
+flower_server      |    Using `start_server()` is deprecated.
+flower_server      | 
+flower_server      |             This is a deprecated feature. It will be removed
+flower_server      |             entirely in future versions of Flower.
+flower_server      |         
+flower_server      | INFO :      Starting Flower server, config: num_rounds=5, no round_timeout
+flower_server      | INFO :      Flower ECE: gRPC server running (5 rounds), SSL is disabled
+flower_server      | INFO :      [INIT]
+flower_server      | INFO :      Using initial global parameters provided by strategy
+flower_server      | INFO :      Starting evaluation of initial global parameters
+flower_server      | INFO :      Evaluation returned no results (`None`)
+flower_server      | INFO :      
+flower_server      | INFO :      [ROUND 1]
+hospital_1_client  | Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+hospital_2_client  | Using a slow image processor as `use_fast` is unset and a slow processor was saved with this model. `use_fast=True` will be the default behavior in v4.52, even if the model was saved with a slow processor. This will result in minor differences in outputs. You'll still be able to use a slow processor with `use_fast=False`.
+hospital_1_client  | WARNING :   DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+hospital_1_client  |    Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+hospital_1_client  | 
+hospital_1_client  |            $ flower-supernode --insecure --superlink='<IP>:<PORT>'
+hospital_1_client  | 
+hospital_1_client  |    To view all available options, run:
+hospital_1_client  | 
+hospital_1_client  |            $ flower-supernode --help
+hospital_1_client  | 
+hospital_1_client  |    Using `start_client()` is deprecated.
+hospital_1_client  | 
+hospital_1_client  |             This is a deprecated feature. It will be removed
+hospital_1_client  |             entirely in future versions of Flower.
+hospital_1_client  |         
+hospital_2_client  | WARNING :   DEPRECATED FEATURE: flwr.client.start_client() is deprecated.
+hospital_2_client  |    Instead, use the `flower-supernode` CLI command to start a SuperNode as shown below:
+hospital_2_client  | 
+hospital_2_client  |            $ flower-supernode --insecure --superlink='<IP>:<PORT>'
+hospital_2_client  | 
+hospital_2_client  |    To view all available options, run:
+hospital_2_client  | 
+hospital_2_client  |            $ flower-supernode --help
+hospital_2_client  | 
+hospital_2_client  |    Using `start_client()` is deprecated.
+hospital_2_client  | 
+hospital_2_client  |             This is a deprecated feature. It will be removed
+hospital_2_client  |             entirely in future versions of Flower.
+hospital_2_client  |         
+flower_server      | INFO :      configure_fit: strategy sampled 2 clients (out of 2)
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: train message 3c8165e3-6e8f-463f-a4f6-4d0fda4fdfd5
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: train message 635c36ad-6c4e-4e94-83db-a74357a0788c
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_fit: received 2 results and 0 failures
+flower_server      | INFO :      configure_evaluate: strategy sampled 2 clients (out of 2)
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: evaluate message 22f28a0f-899d-465a-abf5-006af88e8bff
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: evaluate message 711355a0-261f-4dba-9a6b-f3aa2338dca6
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_evaluate: received 2 results and 0 failures
+flower_server      | WARNING :   No evaluate_metrics_aggregation_fn provided
+flower_server      | INFO :      
+flower_server      | INFO :      [ROUND 2]
+flower_server      | INFO :      configure_fit: strategy sampled 2 clients (out of 2)
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: train message 3702ded0-9f77-4478-92d4-bc7fc7cccf13
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: train message a306a50c-836e-4d0b-9683-a38bc271d193
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_fit: received 2 results and 0 failures
+flower_server      | INFO :      configure_evaluate: strategy sampled 2 clients (out of 2)
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: evaluate message cbeeb36e-524b-418d-9659-7965e7fbec75
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: evaluate message ec8001f2-def9-4c16-9cfb-f80362b9bb86
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_evaluate: received 2 results and 0 failures
+flower_server      | INFO :      
+flower_server      | INFO :      [ROUND 3]
+flower_server      | INFO :      configure_fit: strategy sampled 2 clients (out of 2)
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: train message 3c9248f5-cf78-4381-be86-be05e5ba86da
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: train message 351266da-8c3e-4261-8fdf-3074e925d276
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_fit: received 2 results and 0 failures
+flower_server      | INFO :      configure_evaluate: strategy sampled 2 clients (out of 2)
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: evaluate message 423f2475-a897-459d-84a7-5531e99686c7
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: evaluate message 2c553c0b-f547-4e3e-aff7-65bb4a3607bf
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_evaluate: received 2 results and 0 failures
+flower_server      | INFO :      
+flower_server      | INFO :      [ROUND 4]
+flower_server      | INFO :      configure_fit: strategy sampled 2 clients (out of 2)
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: train message 3255036f-baa7-440f-b628-cbd6fcfd5417
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: train message a0078dee-7d40-4c0a-84ee-9ddc0092a110
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_fit: received 2 results and 0 failures
+flower_server      | INFO :      configure_evaluate: strategy sampled 2 clients (out of 2)
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: evaluate message bbcd4025-79a2-4177-89ef-d103da9f7ccf
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: evaluate message da4e53b8-8b50-4d7a-9201-e8dedfc814dd
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_evaluate: received 2 results and 0 failures
+flower_server      | INFO :      
+flower_server      | INFO :      [ROUND 5]
+flower_server      | INFO :      configure_fit: strategy sampled 2 clients (out of 2)
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: train message 9d7a884e-35bf-4ee9-87a9-61f0dceb4d25
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: train message 7cd4ceb9-b6aa-40b2-b4d1-845b43a9cb16
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_fit: received 2 results and 0 failures
+flower_server      | INFO :      configure_evaluate: strategy sampled 2 clients (out of 2)
+hospital_1_client  | INFO :      
+hospital_1_client  | INFO :      Received: evaluate message 8d3d5d05-4085-4ce5-ab1c-898da6c56e7f
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: evaluate message 2fc8b999-4884-4e2b-8794-1b1f1d5ab95a
+hospital_1_client  | INFO :      Sent reply
+hospital_2_client  | INFO :      Sent reply
+flower_server      | INFO :      aggregate_evaluate: received 2 results and 0 failures
+flower_server      | INFO :      
+flower_server      | INFO :      [SUMMARY]
+flower_server      | INFO :      Run finished 5 round(s) in 265.69s
+flower_server      | INFO :             History (loss, distributed):
+flower_server      | INFO :                     round 1: 0.04981252866295668
+flower_server      | INFO :                     round 2: 0.04576388517251381
+flower_server      | INFO :                     round 3: 0.04389233514666557
+flower_server      | INFO :                     round 4: 0.04256968171550678
+flower_server      | INFO :                     round 5: 0.04135603228440651
+flower_server      | INFO :             History (metrics, distributed, fit):
+flower_server      | INFO :             {'accuracy_avg': [(1, 98.14285714285714),
+flower_server      | INFO :                               (2, 98.14285714285714),
+flower_server      | INFO :                               (3, 98.47619047619048),
+flower_server      | INFO :                               (4, 98.76190476190476),
+flower_server      | INFO :                               (5, 98.76190476190476)]}
+flower_server      | INFO :      
+hospital_1_client  | INFO :      
+
+hospital_2_client  | INFO :      
+hospital_2_client  | INFO :      Received: reconnect message ca1d2219-3c3b-4cbd-9815-facb896e5d94
+
+hospital_1_client  | INFO :      Received: reconnect message daafe626-ebef-4aa8-8916-6f18eaa99cf5
+hospital_1_client  | INFO :      Disconnect and shut down
+hospital_2_client  | INFO :      Disconnect and shut down
+hospital_2_client  | Loading Hugging Face model: dima806/chest_xray_pneumonia_detection
+hospital_2_client  | Freezing all model parameters except the classification head.
+hospital_2_client  | Unfrozen 'classifier' head (final classification layer).
+hospital_2_client  | Loading Hugging Face image processor for: dima806/chest_xray_pneumonia_detection
+hospital_2_client  | [hospital_2] Initialized with 175 samples. Device: cpu
+hospital_2_client  | [hospital_2] Trainable parameters: 1538
+hospital_2_client  | [hospital_2] Round finished - Loss: 0.0651, Acc: 98.29%
+hospital_2_client  | [hospital_2] Getting trainable parameters.
+hospital_2_client  | [hospital_2] Evaluation - Loss: 0.0530, Acc: 98.29%
+hospital_2_client  | [hospital_2] Round finished - Loss: 0.0526, Acc: 98.29%
+hospital_2_client  | [hospital_2] Getting trainable parameters.
+hospital_2_client  | [hospital_2] Evaluation - Loss: 0.0501, Acc: 98.29%
+hospital_2_client  | [hospital_2] Round finished - Loss: 0.0506, Acc: 98.29%
+hospital_2_client  | [hospital_2] Getting trainable parameters.
+hospital_2_client  | [hospital_2] Evaluation - Loss: 0.0486, Acc: 98.29%
+hospital_2_client  | [hospital_2] Round finished - Loss: 0.0505, Acc: 98.86%
+hospital_2_client  | [hospital_2] Getting trainable parameters.
+hospital_2_client  | [hospital_2] Evaluation - Loss: 0.0478, Acc: 98.86%
+hospital_2_client  | [hospital_2] Round finished - Loss: 0.0482, Acc: 98.86%
+hospital_2_client  | [hospital_2] Getting trainable parameters.
+hospital_2_client  | [hospital_2] Evaluation - Loss: 0.0466, Acc: 98.29%
+flower_server      | Server: Loading initial model to create strategy...
+flower_server      | Loading Hugging Face model: dima806/chest_xray_pneumonia_detection
+flower_server      | Freezing all model parameters except the classification head.
+flower_server      | Unfrozen 'classifier' head (final classification layer).
+flower_server      | Loading Hugging Face model: dima806/chest_xray_pneumonia_detection
+flower_server      | Freezing all model parameters except the classification head.
+flower_server      | Unfrozen 'classifier' head (final classification layer).
+flower_server      | Server Strategy: Identified 200 total layers.
+flower_server      | Server Strategy: Identified 2 trainable layers: ['classifier.weight', 'classifier.bias']
+flower_server      | Strategy: Initializing global model with full parameters.
+flower_server      | 
+flower_server      | 🔄 ROUND 1 - Aggregating 2 PARTIAL client updates.
+flower_server      | ✅ Round 1 - Aggregation complete. Full model updated.
+flower_server      | 
+flower_server      | 🔄 ROUND 2 - Aggregating 2 PARTIAL client updates.
+flower_server      | ✅ Round 2 - Aggregation complete. Full model updated.
+flower_server      | 
+flower_server      | 🔄 ROUND 3 - Aggregating 2 PARTIAL client updates.
+flower_server      | ✅ Round 3 - Aggregation complete. Full model updated.
+flower_server      | 
+flower_server      | 🔄 ROUND 4 - Aggregating 2 PARTIAL client updates.
+flower_server      | ✅ Round 4 - Aggregation complete. Full model updated.
+flower_server      | 
+flower_server      | 🔄 ROUND 5 - Aggregating 2 PARTIAL client updates.
+flower_server      | ✅ Round 5 - Aggregation complete. Full model updated.
+hospital_1_client  | Loading Hugging Face model: dima806/chest_xray_pneumonia_detection
+hospital_1_client  | Freezing all model parameters except the classification head.
+hospital_1_client  | Unfrozen 'classifier' head (final classification layer).
+hospital_1_client  | Loading Hugging Face image processor for: dima806/chest_xray_pneumonia_detection
+hospital_1_client  | [hospital_1] Initialized with 150 samples. Device: cpu
+hospital_1_client  | [hospital_1] Trainable parameters: 1538
+hospital_1_client  | [hospital_1] Round finished - Loss: 0.0596, Acc: 98.00%
+hospital_1_client  | [hospital_1] Getting trainable parameters.
+hospital_1_client  | [hospital_1] Evaluation - Loss: 0.0461, Acc: 98.00%
+hospital_1_client  | [hospital_1] Round finished - Loss: 0.0443, Acc: 98.00%
+hospital_1_client  | [hospital_1] Getting trainable parameters.
+hospital_1_client  | [hospital_1] Evaluation - Loss: 0.0407, Acc: 98.00%
+hospital_1_client  | [hospital_1] Round finished - Loss: 0.0417, Acc: 98.67%
+hospital_1_client  | [hospital_1] Getting trainable parameters.
+hospital_1_client  | [hospital_1] Evaluation - Loss: 0.0384, Acc: 98.67%
+hospital_1_client  | [hospital_1] Round finished - Loss: 0.0405, Acc: 98.67%
+hospital_1_client  | [hospital_1] Getting trainable parameters.
+hospital_1_client  | [hospital_1] Evaluation - Loss: 0.0365, Acc: 98.67%
+hospital_1_client  | [hospital_1] Round finished - Loss: 0.0390, Acc: 98.67%
+hospital_1_client  | [hospital_1] Getting trainable parameters.
+hospital_1_client  | [hospital_1] Evaluation - Loss: 0.0353, Acc: 98.67%
+flower_server exited with code 0
+hospital_1_client exited with code 0
+hospital_2_client exited with code 0
+(venv) amiteshjammula@Amiteshs-MacBook-Pro MediChain-FL % 
