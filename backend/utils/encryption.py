@@ -26,7 +26,7 @@ class HEManager:
     
     def __init__(
         self,
-        poly_modulus_degree: int = 8192,
+        poly_modulus_degree: int = 4096,
         coeff_mod_bit_sizes: List[int] = None,
         global_scale: int = 2**40
     ):

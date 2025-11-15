@@ -171,7 +171,7 @@ class PneumoniaClient(fl.client.NumPyClient):
     def _prepare_parameter_payload(self, params):
         if self.he_manager is None:
             return params
-        encrypted = self.he_manager.encrypt_gradients(params, encrypt_all=True)
+        encrypted = self.he_manager.encrypt_gradients(params, encrypt_all=False)
         return self.he_manager.serialize_vectors(encrypted)
 
 def start_client(hospital_id: str, server_address: str = "localhost:8080"):
