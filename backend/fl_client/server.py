@@ -1,6 +1,10 @@
 # medichain-fl/backend/fl_client/server.py
 
+import base64
+import uuid
+
 import flwr as fl
+import numpy as np
 from typing import List, Tuple, Optional, Dict
 from flwr.common import Parameters, ndarrays_to_parameters, parameters_to_ndarrays
 from flwr.server.strategy.aggregate import aggregate
@@ -10,19 +14,33 @@ from pathlib import Path
 # Add backend to path to import model
 sys.path.append(str(Path(__file__).parent.parent))
 from model import load_model
+from utils.encryption import HEManager
 
 class PartialUpdateStrategy(fl.server.strategy.FedAvg):
-    def __init__(self, initial_parameters: Parameters, **kwargs):
+    def __init__(self, initial_parameters: Parameters, use_homomorphic_encryption: bool = True, **kwargs):
         super().__init__(**kwargs)
         # Store the full set of initial parameters
         self.initial_parameters = initial_parameters
+        self.he_enabled = use_homomorphic_encryption
+        self.he_manager: Optional[HEManager] = HEManager() if self.he_enabled else None
+        self.he_context_serialized: Optional[bytes] = None
+        self.he_context_b64: Optional[str] = None
+        self.he_context_id: Optional[str] = None
         
         # We need to know which layers are trainable AND the names of ALL layers.
-        # Load the model ONCE to get this structural information.
         temp_model = load_model(freeze_encoder=True)
+        temp_state = temp_model.state_dict()
         self.trainable_param_keys = [name for name, param in temp_model.named_parameters() if param.requires_grad]
-        # IMPORTANT CHANGE: Store all layer names (keys) to avoid reloading the model.
-        self.all_param_keys = list(temp_model.state_dict().keys())
+        self.trainable_param_shapes = {name: tuple(temp_state[name].shape) for name in self.trainable_param_keys}
+        self.all_param_keys = list(temp_state.keys())
+
+        if self.he_manager:
+            self.he_context_serialized = self.he_manager.serialize_context()
+            self.he_context_b64 = base64.b64encode(self.he_context_serialized).decode("ascii")
+            self.he_context_id = f"ctx-{uuid.uuid4()}"
+            print(f"Server Strategy: Homomorphic encryption enabled (context id={self.he_context_id}).")
+        else:
+            print("Server Strategy: Homomorphic encryption disabled.")
 
         print(f"Server Strategy: Identified {len(self.all_param_keys)} total layers.")
         print(f"Server Strategy: Identified {len(self.trainable_param_keys)} trainable layers: {self.trainable_param_keys}")
@@ -33,6 +51,21 @@ class PartialUpdateStrategy(fl.server.strategy.FedAvg):
         """
         print("Strategy: Initializing global model with full parameters.")
         return self.initial_parameters
+
+    def configure_fit(
+        self,
+        server_round: int,
+        parameters: Parameters,
+        client_manager: fl.server.client_manager.ClientManager,
+    ):
+        fit_configurations = super().configure_fit(server_round, parameters, client_manager)
+        if not self.he_manager or not fit_configurations:
+            return fit_configurations
+
+        for _, fit_ins in fit_configurations:
+            fit_ins.config["he_context_b64"] = self.he_context_b64
+            fit_ins.config["he_context_id"] = self.he_context_id or "default"
+        return fit_configurations
 
     def aggregate_fit(
         self,
@@ -46,46 +79,87 @@ class PartialUpdateStrategy(fl.server.strategy.FedAvg):
             # In case of failure, return the last known good model to continue
             current_full_params = self.initial_parameters if self.initial_parameters else None
             return current_full_params, {}
-
         print(f"\n🔄 ROUND {server_round} - Aggregating {len(results)} PARTIAL client updates.")
-        
-        # 1. Get the current full global model weights as a list of NumPy arrays
+
+        use_encrypted_path = self.he_manager is not None and self._payload_is_encrypted(results)
+        if use_encrypted_path:
+            return self._aggregate_encrypted_fit(server_round, results)
+        return self._aggregate_plain_fit(server_round, results)
+
+    def _aggregate_plain_fit(
+        self,
+        server_round: int,
+        results: List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.FitRes]],
+    ) -> Tuple[Optional[Parameters], Dict[str, fl.common.Scalar]]:
         current_weights = parameters_to_ndarrays(self.initial_parameters)
-        
-        # OPTIMIZED: Use the stored list of keys instead of reloading the model
         state_dict = dict(zip(self.all_param_keys, current_weights))
 
-        # 2. Aggregate the partial updates from clients using FedAvg logic
         partial_updates_aggregated = [
             (parameters_to_ndarrays(fit_res.parameters), fit_res.num_examples)
             for _, fit_res in results
         ]
         aggregated_updates = aggregate(partial_updates_aggregated)
 
-        # 3. Surgically insert the aggregated updates back into the full model
         aggregated_updates_dict = dict(zip(self.trainable_param_keys, aggregated_updates))
         state_dict.update(aggregated_updates_dict)
 
-        # 4. Convert the updated full state_dict back to the Flower Parameters format
         updated_full_parameters = ndarrays_to_parameters(list(state_dict.values()))
-        
-        # 5. Store the new full model for the next round
         self.initial_parameters = updated_full_parameters
 
-        print(f"✅ Round {server_round} - Aggregation complete. Full model updated.")
+        print(f"✅ Round {server_round} - Plain aggregation complete. Full model updated.")
+        return updated_full_parameters, self._aggregate_metrics(results)
+
+    def _aggregate_encrypted_fit(
+        self,
+        server_round: int,
+        results: List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.FitRes]],
+    ) -> Tuple[Optional[Parameters], Dict[str, fl.common.Scalar]]:
+        if not self.he_manager:
+            raise RuntimeError("HE aggregation requested but HE manager is not initialized")
+
+        serialized_updates = [parameters_to_ndarrays(fit_res.parameters) for _, fit_res in results]
+        sample_counts = [fit_res.num_examples for _, fit_res in results]
+
+        encrypted_updates = [self.he_manager.deserialize_vectors(update) for update in serialized_updates]
+        aggregated_encrypted = self.he_manager.aggregate_encrypted_weighted(encrypted_updates, sample_counts)
+        decrypted_layers = self.he_manager.decrypt_gradients(aggregated_encrypted)
         
-        # Aggregate metrics if needed
-        # We need to handle failures properly here
-        aggregated_metrics = {}
-        if results:
-            # Re-implement a simple metric aggregation to avoid issues with the base class
-            accuracies = [res.metrics.get("accuracy", 0) for _, res in results]
-            if accuracies:
-                aggregated_metrics["accuracy_avg"] = sum(accuracies) / len(accuracies)
+        current_weights = parameters_to_ndarrays(self.initial_parameters)
+        state_dict = dict(zip(self.all_param_keys, current_weights))
+        aggregated_updates_dict = {}
+        for key, flat_values in zip(self.trainable_param_keys, decrypted_layers):
+            shape = self.trainable_param_shapes[key]
+            target_dtype = state_dict[key].dtype
+            reshaped = flat_values.reshape(shape).astype(target_dtype, copy=False)
+            aggregated_updates_dict[key] = reshaped
+        state_dict.update(aggregated_updates_dict)
 
-        return updated_full_parameters, aggregated_metrics
+        updated_full_parameters = ndarrays_to_parameters(list(state_dict.values()))
+        self.initial_parameters = updated_full_parameters
 
-def start_server(num_rounds: int = 5):
+        print(f"✅ Round {server_round} - HE aggregation complete. Full model updated.")
+        return updated_full_parameters, self._aggregate_metrics(results)
+
+    @staticmethod
+    def _aggregate_metrics(
+        results: List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.FitRes]]
+    ) -> Dict[str, fl.common.Scalar]:
+        aggregated_metrics: Dict[str, fl.common.Scalar] = {}
+        if not results:
+            return aggregated_metrics
+        accuracies = [res.metrics.get("accuracy", 0) for _, res in results]
+        if accuracies:
+            aggregated_metrics["accuracy_avg"] = sum(accuracies) / len(accuracies)
+        return aggregated_metrics
+
+    def _payload_is_encrypted(
+        self,
+        results: List[Tuple[fl.server.client_proxy.ClientProxy, fl.common.FitRes]],
+    ) -> bool:
+        sample_arrays = parameters_to_ndarrays(results[0][1].parameters)
+        return bool(sample_arrays) and sample_arrays[0].dtype == np.uint8
+
+def start_server(num_rounds: int = 5, use_he: bool = True):
     """Starts the Flower server with our custom partial update strategy."""
     
     # The server must load the model to get the initial state
@@ -97,6 +171,7 @@ def start_server(num_rounds: int = 5):
     # Instantiate our custom strategy
     strategy = PartialUpdateStrategy(
         initial_parameters=initial_parameters,
+        use_homomorphic_encryption=use_he,
         fraction_fit=1.0,
         min_fit_clients=2,
         min_available_clients=2,
@@ -109,4 +184,6 @@ def start_server(num_rounds: int = 5):
     )
 
 if __name__ == "__main__":
-    start_server(num_rounds=5)
+    import sys
+    use_he = "--no-he" not in sys.argv
+    start_server(num_rounds=5, use_he=use_he)

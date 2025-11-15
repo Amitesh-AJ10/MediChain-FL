@@ -207,29 +207,9 @@ class HEManager:
         print(f"   Each update has {num_layers} encrypted layers")
         print()
         
-        aggregated = []
-        
-        for layer_idx in range(num_layers):
-            print(f"   Layer {layer_idx + 1}/{num_layers}:")
-            
-            # Initialize with first client's encrypted vector for this layer
-            layer_sum = encrypted_list[0][layer_idx]
-            print(f"      Step 1: Initialize with client 1")
-            
-            # Add remaining clients' encrypted vectors
-            # This is HOMOMORPHIC ADDITION - happens on encrypted data!
-            for client_idx in range(1, num_clients):
-                layer_sum = layer_sum + encrypted_list[client_idx][layer_idx]
-                print(f"      Step {client_idx + 1}: Add client {client_idx + 1} (still encrypted)")
-            
-            # Divide by number of clients (scalar multiplication on encrypted data)
-            # This is HOMOMORPHIC SCALAR MULTIPLICATION
-            layer_avg = layer_sum * (1.0 / num_clients)
-            print(f"      Step {num_clients + 1}: Divide by {num_clients} (still encrypted)")
-            print(f"      ✓ Layer {layer_idx + 1} aggregated\n")
-            
-            aggregated.append(layer_avg)
-        
+        weights = [1.0] * num_clients
+        aggregated = self.aggregate_encrypted_weighted(encrypted_list, weights)
+
         elapsed = time.time() - start_time
         self.aggregation_count += 1
         
@@ -238,6 +218,39 @@ class HEManager:
         print(f"\n🔐 CRITICAL: Server performed FedAvg WITHOUT seeing individual gradients!")
         print(f"   All operations were on encrypted data\n")
         
+        return aggregated
+
+    def aggregate_encrypted_weighted(
+        self,
+        encrypted_list: List[List[ts.CKKSVector]],
+        weights: List[float]
+    ) -> List[ts.CKKSVector]:
+        """Aggregate encrypted gradients using custom client weights."""
+
+        if not encrypted_list:
+            raise ValueError("Cannot aggregate empty encrypted list")
+        if len(encrypted_list) != len(weights):
+            raise ValueError("Weights length must match encrypted updates")
+
+        total_weight = float(sum(weights))
+        if total_weight <= 0:
+            raise ValueError("Total weight must be positive")
+
+        num_layers = len(encrypted_list[0])
+        aggregated = []
+
+        for layer_idx in range(num_layers):
+            layer_accumulator = None
+            for client_idx, (client_updates, weight) in enumerate(zip(encrypted_list, weights)):
+                scaled = client_updates[layer_idx] * (weight / total_weight)
+                layer_accumulator = scaled if layer_accumulator is None else layer_accumulator + scaled
+                print(
+                    f"      Layer {layer_idx + 1}: incorporated client {client_idx + 1} "
+                    f"with weight {weight:.2f}"
+                )
+
+            aggregated.append(layer_accumulator)
+
         return aggregated
     
     def decrypt_gradients(
@@ -285,6 +298,22 @@ class HEManager:
         print(f"   Total decryptions so far: {self.decryption_count}\n")
         
         return decrypted
+
+    def serialize_vectors(self, encrypted_vectors: List[ts.CKKSVector]) -> List[np.ndarray]:
+        """Serialize CKKS vectors into numpy uint8 arrays for transport."""
+        serialized = []
+        for vec in encrypted_vectors:
+            buffer = vec.serialize()
+            serialized.append(np.frombuffer(buffer, dtype=np.uint8).copy())
+        return serialized
+
+    def deserialize_vectors(self, serialized_arrays: List[np.ndarray]) -> List[ts.CKKSVector]:
+        """Reconstruct CKKS vectors from numpy uint8 arrays."""
+        vectors = []
+        for array in serialized_arrays:
+            contiguous = np.ascontiguousarray(array)
+            vectors.append(ts.ckks_vector_from(self.context, contiguous.tobytes()))
+        return vectors
     
     def get_context_info(self) -> dict:
         """Get information about the encryption context"""
