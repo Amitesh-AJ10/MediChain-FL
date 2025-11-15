@@ -1,24 +1,25 @@
-# medichain-fl/Dockerfile.client
-FROM python:3.11-slim-bullseye
+# Change Python version from 3.11 to 3.12
+FROM python:3.12-slim-bullseye
 
 WORKDIR /app
 
-# Install system dependencies
+# Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libsm6 \
     libxext6 \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python packages
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Copy and install requirements
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy your backend code
 COPY backend/ /app/backend/
 
-# Define an entrypoint script to take hospital_id
 COPY scripts/entrypoint_client.sh /app/entrypoint_client.sh
 RUN chmod +x /app/entrypoint_client.sh
 

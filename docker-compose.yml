@@ -2,6 +2,7 @@
 
 services:
   flower_server:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.server
@@ -17,6 +18,7 @@ services:
           memory: 8g # Give the server 8 Gigabytes of RAM
 
   hospital_1_client:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.client
@@ -37,6 +39,7 @@ services:
           memory: 4g # Give the client 4 Gigabytes of RAM
 
   hospital_2_client:
+    platform: linux/amd64
     build:
       context: .
       dockerfile: Dockerfile.client
