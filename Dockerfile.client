@@ -10,12 +10,14 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
+# Install uv
 RUN pip install --upgrade pip
+RUN pip install uv
 
-# Copy and install requirements
+# Copy and install requirements using uv
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# IMPORTANT CHANGE: Added the --system flag
+RUN uv pip install --system --no-cache-dir -r requirements.txt
 
 # Copy your backend code
 COPY backend/ /app/backend/
