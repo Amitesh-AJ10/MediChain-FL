@@ -70,3 +70,4 @@ models/
 # node_modules/
 # build/ # For React apps
 __pycache__/
+node_modules/
