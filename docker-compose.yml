@@ -1,4 +1,4 @@
-version: '3.8'
+# medichain-fl/docker-compose.yml
 
 services:
   flower_server:
@@ -7,9 +7,14 @@ services:
       dockerfile: Dockerfile.server
     container_name: flower_server
     ports:
-      - "8080:8080" # Flower server communication port
+      - "8080:8080"
     volumes:
-      - ./backend:/app/backend # Mount backend code for easier development (optional for final image)
+      - ./backend:/app/backend
+    # IMPORTANT CHANGE: Added resource limits for the server
+    deploy:
+      resources:
+        limits:
+          memory: 8g # Give the server 8 Gigabytes of RAM
 
   hospital_1_client:
     build:
@@ -19,13 +24,17 @@ services:
     environment:
       - HOSPITAL_ID=hospital_1
     volumes:
-      - ./backend:/app/backend # Mount backend code
-      - ./data/hospital_1:/app/data/hospital_1:ro # Mount specific hospital data (read-only)
+      - ./backend:/app/backend
+      - ./data/hospital_1:/app/data/hospital_1:ro
     depends_on:
       - flower_server
-    # Ensure clients can connect to the server's name
     extra_hosts:
-      - "localhost:host-gateway" # Allows localhost:8080 to map to host's 8080 for connection from client to server if needed.
+      - "localhost:host-gateway"
+    # IMPORTANT CHANGE: Added resource limits for the client
+    deploy:
+      resources:
+        limits:
+          memory: 4g # Give the client 4 Gigabytes of RAM
 
   hospital_2_client:
     build:
@@ -40,4 +49,9 @@ services:
     depends_on:
       - flower_server
     extra_hosts:
-      - "localhost:host-gateway" # Same as above
+      - "localhost:host-gateway"
+    # IMPORTANT CHANGE: Added resource limits for the client
+    deploy:
+      resources:
+        limits:
+          memory: 4g # Give the client 4 Gigabytes of RAM

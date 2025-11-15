@@ -52,7 +52,7 @@ class PneumoniaClient(fl.client.NumPyClient):
             batch_size=8, # Kept the reduced batch size
             shuffle=True,
             num_workers=0, # IMPORTANT CHANGE: Set num_workers to 0 for stability on macOS/Docker
-            pin_memory=True
+            pin_memory=False # IMPORTANT CHANGE: Set pin_memory to False when not using a GPU
         )
         
         # Loss + optimizer
@@ -66,14 +66,26 @@ class PneumoniaClient(fl.client.NumPyClient):
         print(f"[{self.hospital_id}] Trainable parameters: {sum(p.numel() for p in self.model.parameters() if p.requires_grad)}")
 
     def get_parameters(self, config):
-        return [val.cpu().numpy() for _, val in self.model.state_dict().items()]
+        """
+        Returns only the model parameters that are trainable (unfrozen).
+        """
+        print(f"[{self.hospital_id}] Getting trainable parameters.")
+        # Find all parameters that have requires_grad = True
+        trainable_params = [val.cpu().detach().numpy() for val in self.model.parameters() if val.requires_grad]
+        return trainable_params
     
     def set_parameters(self, parameters):
+        """
+        Sets the model parameters.
+        NOTE: This client now receives the FULL model from the server,
+        so this function can handle loading the full state dict correctly.
+        """
         params_dict = zip(self.model.state_dict().keys(), parameters)
         state_dict = {k: torch.tensor(v) for k, v in params_dict}
         self.model.load_state_dict(state_dict, strict=True)
     
     def fit(self, parameters, config):
+        # IMPORTANT: The client now receives the FULL updated model from the server
         self.set_parameters(parameters)
         self.model.train()
         
@@ -103,6 +115,7 @@ class PneumoniaClient(fl.client.NumPyClient):
         
         print(f"[{self.hospital_id}] Round finished - Loss: {avg_loss:.4f}, Acc: {accuracy:.2f}%")
         
+        # IMPORTANT: Return ONLY the updated (trainable) parameters
         return self.get_parameters(config={}), len(self.trainloader.dataset), {
             "loss": float(avg_loss),
             "accuracy": float(accuracy)
@@ -132,7 +145,14 @@ class PneumoniaClient(fl.client.NumPyClient):
         return float(avg_loss), total, {"accuracy": float(accuracy)}
 
 def start_client(hospital_id: str, server_address: str = "localhost:8080"):
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    # Determine device
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    elif torch.backends.mps.is_available():
+        device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
 
     client = PneumoniaClient(
         hospital_id,
