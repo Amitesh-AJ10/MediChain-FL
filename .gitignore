@@ -1,4 +1,71 @@
-node_modules
-uv.lock
-.venv
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.env
 
+# Editor/IDE specific
+.vscode/        # VS Code specific settings
+.idea/          # IntelliJ IDEA specific settings
+*.sublime-project
+*.sublime-workspace
+
+# macOS specific files
+.DS_Store
+__MACOSX/
+
+# Operating System files
+*~
+*.bak
+*.swp
+*.tmp
+
+# Data - Large files and generated data
+data/
+data/chest-xray-pneumonia.zip   # The original large zip file
+data/hospital_1/                # Generated data for hospital 1
+data/hospital_2/                # Generated data for hospital 2
+data/chest_xray/               # Unzipped dataset directory
+# It's common to ignore the entire unzipped dataset if it's large and
+# can be easily re-downloaded or prepared.
+# Uncomment the line below if you don't want to track the full `chest_xray` dataset
+# data/chest_xray/
+
+# Python build artifacts
+build/
+dist/
+*.egg-info/
+.coverage
+.pytest_cache/
+htmlcov/
+.mypy_cache/
+
+# Docker
+*.log                   # Docker logs if any are generated directly in root
+.dockerignore           # This file usually shouldn't be ignored, but often included in templates.
+                        # For your setup, it's not present, but good to know.
+
+# Machine Learning / Hugging Face caches
+# Hugging Face models are downloaded to a global cache by default, usually ~/.cache/huggingface/
+# If you configure HF_HOME or HF_DATASETS_CACHE to be inside the project,
+# you'd need to ignore those specific directories.
+# For example, if you explicitly cache models in a local directory:
+# .hf_cache/
+# .cache/ # General cache directory
+
+# PyTorch checkpoints/saved models (if you save them locally)
+*.pt
+*.pth
+checkpoints/
+models/
+
+# Specific files from your structure that are typically ignored
+.python-version # pyenv specific file
+
+# Frontend (if you later add a frontend)
+# node_modules/
+# build/ # For React apps
